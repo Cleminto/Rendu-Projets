@@ -1,0 +1,88 @@
+int nx =90,ny = 90;
+
+real aa = -0.7, bb = 1.7, cc = -1.7, dd = 0.7;
+real eps = 0.0125;
+real T = 2.6e-2;
+real dt = 1e-6;
+real mass;
+
+
+real a20 = 0;
+real a11 = 0;
+real a02 = 0;
+real a10 = 1;
+real a01 = 1;
+
+
+mesh Th = square(nx,ny, [aa+(bb-aa)*x, cc+(dd-cc)*y]);
+
+fespace Vh(Th,P1, periodic = [[1,x],[3,x],[4,y],[2,y]]);
+
+Vh u,w,p,q,uold,phi1,phi2,phi3,phi4;
+
+func a = sqrt(2*(x-0.5)^2 + 0.25*(y+0.5)^2) - 0.1;
+real b = 1/(sqrt(2)*eps);
+func u0 = - tanh(b*a);
+func real f(real c)
+{
+return c^3 - c;
+}
+
+
+macro Grad(u)[dx(u),dy(u)] //
+
+problem CH([u,w,p,q],[phi1,phi2,phi3,phi4]) =
+  int2d(Th)(u*phi1/dt)
+  - int2d(Th)(uold*phi1/dt)
+  - int2d(Th)(Grad(w)'*Grad(phi1))
+  + int2d(Th)((46*(uold+1) - 280*(uold - 1)^2*(uold +1)^2)*phi1/eps)
+  + int2d(Th)(w*phi2)
+  - int2d(Th)(a20*eps*dx(p)*dx(phi2))
+  - int2d(Th)(a02*eps*dy(q)*dy(phi2))
+  - int2d(Th)(a11*eps*dy(p)*dy(phi2)/2)
+  - int2d(Th)(a11*eps*dx(q)*dx(phi2)/2)
+  - int2d(Th)(a10*eps*p*phi2)
+  - int2d(Th)(a01*eps*q*phi2)
+  + int2d(Th)(f(uold)*phi2/eps)
+  + int2d(Th)(p*phi3)
+  + int2d(Th)(dx(u)*dx(phi3))
+  + int2d(Th)(q*phi4)
+  + int2d(Th)(dy(u)*dy(phi4));
+
+
+
+
+
+u = u0;
+
+plot(u, fill =true,value = true, nbiso= 25, wait = 0, ps  = "k0.eps");
+int k = 0;
+
+for (real t=0;t<=T;t+=dt){
+
+ 	uold = u;
+   cout << "Temps : " << t << endl;
+   cout << " Iterations : " << k << endl;
+ 	 CH;
+   if (k == 5000)
+   {
+     plot(u,fill=true,value=true,nbiso= 25,wait = 0);
+   };
+   if (k == 10000)
+   {
+     plot(u,fill=true,value=true,nbiso= 25,wait = 0);
+   };
+   if (k == 15000)
+   {
+     plot(u,fill=true,value=true,nbiso= 25,wait = 0, ps = "k15.eps");
+   };
+   if (k == 20000)
+   {
+     plot(u,fill=true,value=true,nbiso= 25,wait = 0);
+   };
+   if (k == 25000)
+   {
+     plot(u,fill=true,value=true,nbiso= 25,wait = 0, ps = "k25.eps");
+   };
+   k = k+1;
+ }

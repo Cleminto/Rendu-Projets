@@ -1,0 +1,70 @@
+// Parametres
+int nx =100,ny = 100;
+real L = 10;
+real aa = -L, bb = L, cc = -L, dd = L;
+real eps = 0.1;
+real eps2 = 1/eps^2;
+real T = 2;
+real dt = 0.001;
+
+// Creation des bordures du maillage
+border AB(t = aa,bb){x = t; y=cc; label =1;};
+border BC(t = cc,dd){x = bb; y=t; label =2;};
+border CD(t = bb,aa){x = t; y=dd; label =3;};
+border DA(t = dd,cc){x = aa; y=t; label =4;};
+
+// Creation du maillage et de l'espace d'elements finis
+mesh Th = buildmesh(AB(nx)+BC(ny)+CD(nx)+DA(ny));
+fespace Vh(Th,P1,periodic = [[1,x],[3,x],[4,y],[2,y]]);
+
+Vh u,w,p,uold,phi,psi,xi;
+
+// Definition de la condition initiale
+func u0 = 1-2*randreal1();
+
+macro Grad(u)[dx(u),dy(u)] //
+
+// Definition du probleme
+problem CH([u,w,p],[phi,psi,xi]) =
+  int2d(Th)(u*phi/dt)
+  - int2d(Th)(uold*phi/dt)
+  + int2d(Th)(Grad(w)'*Grad(phi))
+  + int2d(Th)(w*psi)
+  - int2d(Th)(Grad(p)'*Grad(psi))
+  + int2d(Th)(2*p*psi)
+  - int2d(Th)(eps2*(uold^3 - uold)*psi)
+  + int2d(Th)(p*xi)
+  - int2d(Th)(Grad(u)'*Grad(xi));
+
+u = u0;
+int k = 0;
+
+// Iterations
+for (real t=0;t<=T;t+=dt){
+
+	uold = u;
+	CH;
+
+  if (k == 0)
+  {
+    plot(u,fill=true,value=true,nbiso= 25,wait = 0, ps = "exo2_00.eps");
+  };
+  if (k == 500)
+  {
+    plot(u,fill=true,value=true,nbiso= 25,wait = 0, ps = "exo2_05.eps");
+  };
+  if (k == 1000)
+  {
+    plot(u,fill=true,value=true,nbiso= 25,wait = 0, ps = "exo2_10.eps");
+  };
+  if (k == 1500)
+  {
+    plot(u,fill=true,value=true,nbiso= 25,wait = 0, ps = "exo2_15.eps");
+  };
+  if (k == 2000)
+  {
+    plot(u,fill=true,value=true,nbiso= 25,wait = 0, ps = "exo2_20.eps");
+  };
+
+  k = k+1;
+}
