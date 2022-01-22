@@ -1,0 +1,73 @@
+int nx =100,ny = 100;
+real L = 10;
+real aa = -L, bb = L, cc = -L, dd = L;
+real eps = 1;
+real eps2 = 1/eps^2;
+real T = 100;
+real dt = 0.0001;
+real mass;
+
+
+real a20 = 0.1;
+real a11 = 1;
+real a02 = 0.1;
+real a10 = -2;
+real a01 = -2;
+
+border AB(t = aa,bb){x = t; y=cc; label =1;};
+border BC(t = cc,dd){x = bb; y=t; label =2;};
+border CD(t = bb,aa){x = t; y=dd; label =3;};
+border DA(t = dd,cc){x = aa; y=t; label =4;};
+
+mesh Th = buildmesh(AB(nx)+BC(ny)+CD(nx)+DA(ny));
+
+fespace Vh(Th,P1, periodic = [[1,x],[3,x],[4,y],[2,y]]);
+
+Vh u,w,p,q,uold,phi1,phi2,phi3,phi4;
+
+func u0 = 0.3-0.5*randreal1();
+func real f(real c)
+{
+return c^3 + (1-0.025)*c;
+}
+
+
+macro Grad(u)[dx(u),dy(u)] //
+
+problem CH([u,w,p,q],[phi1,phi2,phi3,phi4]) =
+  int2d(Th)(u*phi1/dt)
+  - int2d(Th)(uold*phi1/dt)
+  - int2d(Th)(Grad(w)'*Grad(phi1))
+  + int2d(Th)(2*uold*phi1/eps)
+  + int2d(Th)(w*phi2)
+  - int2d(Th)(a20*eps*dx(p)*dx(phi2))
+  - int2d(Th)(a02*eps*dy(q)*dy(phi2))
+  - int2d(Th)(a11*eps*dy(p)*dy(phi2)/2)
+  - int2d(Th)(a11*eps*dx(q)*dx(phi2)/2)
+  - int2d(Th)(a10*eps*p*phi2)
+  - int2d(Th)(a01*eps*q*phi2)
+  + int2d(Th)(f(uold)*phi2/eps)
+  + int2d(Th)(p*phi3)
+  + int2d(Th)(dx(u)*dx(phi3))
+  + int2d(Th)(q*phi4)
+  + int2d(Th)(dy(u)*dy(phi4));
+
+
+
+
+u = u0;
+int k = 0;
+int nper = 250;
+for (real t=0;t<=T;t+=dt){
+
+	uold = u;
+	CH;
+  mass=int2d(Th)(u*1)/int2d(Th)(1);
+  if (k == 250)
+  {
+    plot(u,fill=true,value=true,nbiso= 25,wait = 0, cmm= "mass = "+mass+"; Temps = "+ t);
+  };
+  k = k+1;
+
+
+}

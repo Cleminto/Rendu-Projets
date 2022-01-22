@@ -1,0 +1,48 @@
+int nx = 100,ny = 100;
+real L = 10;
+real aa = -L, bb = L, cc = -L, dd = L;
+real eps = 0.2;
+real T = 2;
+real dt = 0.001;
+real mass;
+
+border AB(t = aa,bb){x = t; y=cc; label =1;};
+border BC(t = cc,dd){x = bb; y=t; label =2;};
+border CD(t = bb,aa){x = t; y=dd; label =3;};
+border DA(t = dd,cc){x = aa; y=t; label =4;};
+
+mesh Th = buildmesh(AB(nx)+BC(ny)+CD(nx)+DA(ny));
+plot(Th);
+fespace Vh(Th,P1);
+
+Vh v,w,vold,phi,psi;
+
+randinit(1);
+func u0 = 1-2*randreal1();
+
+macro Grad(u)[dx(u),dy(u)] //
+
+problem CH([v,w],[phi,psi]) =
+  int2d(Th)(v*phi/dt)
+  - int2d(Th)(vold*phi/dt)
+  + int2d(Th)(Grad(w)'*Grad(phi))
+  + int2d(Th)(Grad(v)'*Grad(psi) - w*psi)
+  + int2d(Th)((vold^3 - vold)*psi/eps^2);
+
+v = u0;
+int k = 0;
+int nper = 20;
+for (real t=0;t<=T;t+=dt){
+
+	vold = v;
+	CH;
+  mass=int2d(Th)(v*1)/int2d(Th)(1);
+
+  if (k%nper == 0)
+  {
+    plot(v,fill=true,value=true,nbiso= 25,wait = 0, cmm= "mass = "+mass+"; Temps = "+ t
+  );
+  };
+  k = k+1;
+
+}
